@@ -1,0 +1,6 @@
+# Ignorar archivos temporales y del sistema
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+__pycache__/
