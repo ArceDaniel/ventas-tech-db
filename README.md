@@ -49,3 +49,33 @@ El script está dividido en 4 secciones claramente delimitadas:
    - `clientes`: 5 filas
    - `productos`: 6 filas
    - `ventas`: 10 filas
+
+---
+
+## 📊 Módulo 4: Pre-entrega — Consultas SQL de Negocio (`m4_consultas_negocio.sql`)
+
+Extracción de métricas clave y respuestas analíticas para el equipo comercial de **RetailPro** basadas exclusivamente en la tabla de hechos `ventas`.
+
+El script se encuentra disponible en:
+- [`m4_consultas_negocio.sql`](./m4_consultas_negocio.sql)
+
+### 📋 Consultas incluidas
+
+1. **Consulta 1 — Resumen Ejecutivo Mensual:**
+   - Agrupación por mes (`MONTH(fecha_venta)`).
+   - Cálculo de facturación total (`SUM(cantidad * precio_unitario)`), cantidad de pedidos (`COUNT(id_venta)`) y ticket promedio (`AVG(cantidad * precio_unitario)`).
+2. **Consulta 2 — Ranking de Productos (Top 5):**
+   - Top 5 de productos por total facturado utilizando `SELECT TOP 5`, `SUM(cantidad)` y `ORDER BY total_facturado DESC`.
+3. **Consulta 3 — Clientes Recurrentes:**
+   - Identificación de clientes con más de una compra mediante `GROUP BY id_cliente` y `HAVING COUNT(*) > 1`, reportando número de pedidos y monto total acumulado.
+4. **Consulta 4 — Meses Por Encima / Por Debajo del Promedio General:**
+   - Comparativa matemática mensual utilizando una CTE (`WITH FacturacionMensual AS (...)`) y evaluación condicional con `CASE WHEN` para clasificar si cada mes supera o queda por debajo del promedio mensual global.
+
+### 💡 Hallazgos de Negocio Documentados (Insights)
+
+1. **Concentración de ingresos en Hardware Premium (Principio de Pareto):**
+   El producto `id_producto = 1` ('Laptop Pro 15') representa el **55.87%** de la facturación total ($3,600.00 de $6,444.00) con solo 3 unidades vendidas. Los dos productos líderes (`id_producto` 1 y 3) concentran el **76.81%** del ingreso, mientras que accesorios masivos como el Mouse Inalámbrico aportan alto volumen físico (13 unidades) pero bajo porcentaje monetario (5.65%).
+2. **Alta fidelización de la base de clientes:**
+   El 100% de los clientes activos (5 de 5) realizaron 2 pedidos durante el período analizado. No obstante, existe una disparidad pronunciada en el Customer Lifetime Value (CLV): los clientes 1 y 5 representan el **73.56%** de la facturación total, justificando un programa de fidelización diferenciado.
+3. **Estructura y salud del Ticket Promedio:**
+   Marzo registró 10 pedidos con un ticket promedio de $644.40, ubicándose en equilibrio/por encima del promedio general. La alta dependencia de equipos de cómputo de precio elevado aconseja implementar estrategias comerciales de venta cruzada (cross-selling) con periféricos e insumos para mitigar la volatilidad de ingresos.
