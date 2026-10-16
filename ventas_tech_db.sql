@@ -73,22 +73,26 @@ INSERT INTO categorias (id_categoria, nombre_categoria, descripcion) VALUES
   (3, 'Audio',          'Auriculares y parlantes'),
   (4, 'Almacenamiento', 'Discos y memorias');
 
--- Carga clientes (5 registros)
+-- Carga clientes (7 registros)
 INSERT INTO clientes (id_cliente, nombre, email, ciudad, fecha_registro) VALUES
-  (1, 'María López',  'maria@mail.com',  'Buenos Aires', '2024-01-05'),
-  (2, 'Carlos Ruiz',  'carlos@mail.com', 'Córdoba',      '2024-01-10'),
-  (3, 'Ana Gómez',    'ana@mail.com',    'Rosario',      '2024-02-01'),
-  (4, 'Pedro Sanz',   'pedro@mail.com',  'Mendoza',      '2024-02-15'),
-  (5, 'Laura Torres', 'laura@mail.com',  'Tucumán',      '2024-03-01');
+  (1, 'María López',       'maria@mail.com',  'Buenos Aires', '2024-01-05'),
+  (2, 'Carlos Ruiz',       'carlos@mail.com', 'Córdoba',      '2024-01-10'),
+  (3, 'Ana Gómez',         'ana@mail.com',    'Rosario',      '2024-02-01'),
+  (4, 'Pedro Sanz',        'pedro@mail.com',  'Mendoza',      '2024-02-15'),
+  (5, 'Laura Torres',      'laura@mail.com',  'Tucumán',      '2024-03-01'),
+  (6, 'Javier Fernández',  'javier@mail.com', 'Salta',        '2024-03-20'),
+  (7, 'Sofía Martínez',    'sofia@mail.com',  'Neuquén',      '2024-03-22');
 
--- Carga productos (6 registros)
+-- Carga productos (8 registros)
 INSERT INTO productos (id_producto, nombre_producto, id_categoria, precio, stock, activo) VALUES
-  (1, 'Laptop Pro 15',      1, 1200.00, 15, 1),
-  (2, 'Mouse Inalámbrico',  2,   28.00, 80, 1),
-  (3, 'Monitor 4K 27',      1,  450.00, 12, 1),
-  (4, 'Auriculares BT Pro', 3,  120.00, 35, 1),
-  (5, 'SSD Externo 1TB',    4,  130.00, 18, 1),
-  (6, 'Teclado Mecánico',   2,   95.00, 40, 1);
+  (1, 'Laptop Pro 15',          1, 1200.00, 15, 1),
+  (2, 'Mouse Inalámbrico',      2,   28.00, 80, 1),
+  (3, 'Monitor 4K 27',          1,  450.00, 12, 1),
+  (4, 'Auriculares BT Pro',     3,  120.00, 35, 1),
+  (5, 'SSD Externo 1TB',        4,  130.00, 18, 1),
+  (6, 'Teclado Mecánico',       2,   95.00, 40, 1),
+  (7, 'Webcam HD Pro',          2,   75.00, 25, 1),
+  (8, 'Parlante Bluetooth Mini',3,   85.00, 20, 1);
 
 -- Carga ventas (10 registros)
 INSERT INTO ventas (id_venta, id_cliente, id_producto, cantidad, precio_unitario, fecha_venta) VALUES
@@ -107,6 +111,6 @@ INSERT INTO ventas (id_venta, id_cliente, id_producto, cantidad, precio_unitario
 -- SECCIÓN 4: VALIDACIÓN (Consultas de verificación de filas cargadas)
 -- =============================================================================
 SELECT * FROM categorias;   -- esperado: 4 filas
-SELECT * FROM clientes;     -- esperado: 5 filas
-SELECT * FROM productos;    -- esperado: 6 filas
+SELECT * FROM clientes;     -- esperado: 7 filas
+SELECT * FROM productos;    -- esperado: 8 filas
 SELECT * FROM ventas;       -- esperado: 10 filas

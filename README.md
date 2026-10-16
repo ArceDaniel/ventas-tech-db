@@ -79,3 +79,29 @@ El script se encuentra disponible en:
    El 100% de los clientes activos (5 de 5) realizaron 2 pedidos durante el período analizado. No obstante, existe una disparidad pronunciada en el Customer Lifetime Value (CLV): los clientes 1 y 5 representan el **73.56%** de la facturación total, justificando un programa de fidelización diferenciado.
 3. **Estructura y salud del Ticket Promedio:**
    Marzo registró 10 pedidos con un ticket promedio de $644.40, ubicándose en equilibrio/por encima del promedio general. La alta dependencia de equipos de cómputo de precio elevado aconseja implementar estrategias comerciales de venta cruzada (cross-selling) con periféricos e insumos para mitigar la volatilidad de ingresos.
+
+---
+
+## 🔗 Módulo 5: Pre-entrega — Consultas con JOINs para el proyecto (`m5_consultas_joins.sql`)
+
+Cruce relacional de tablas para enriquecer el análisis de **RetailPro**, auditar la actividad de clientes para CRM, identificar productos sin movimiento para el equipo de Producto y consolidar orígenes de venta por canal comercial (preparación del modelo para Power BI en M7).
+
+El script se encuentra disponible en:
+- [`m5_consultas_joins.sql`](./m5_consultas_joins.sql)
+
+### 📋 Consultas incluidas
+
+1. **Consulta 1 — Vista Base del Proyecto (INNER JOIN):**
+   - Integración de `ventas` con `clientes`, `productos` y `categorias`.
+   - Incluye: `id_venta`, `fecha_venta`, `id_cliente`, `nombre_cliente`, `ciudad_cliente`, `id_producto`, `nombre_producto`, `nombre_categoria`, `cantidad`, `precio_unitario` y `total_venta`.
+   - *Hallazgo:* Consolidación de 10 ventas por un total de \$6,444.00, donde 'Computación' lidera con el 76.81% de la facturación global.
+2. **Consulta 2 — Clientes sin Ventas (LEFT JOIN):**
+   - Detección de clientes registrados sin historial de compras usando `LEFT JOIN` y `WHERE v.id_venta IS NULL`.
+   - *Hallazgo:* Detección de 2 clientes registrados a finales de marzo sin compras, brindando al área de CRM la oportunidad de activar cupones de bienvenida para incentivar su primera compra.
+3. **Consulta 3 — Productos sin Ventas (LEFT JOIN):**
+   - Detección de artículos del catálogo activo sin ventas registradas usando `LEFT JOIN` y `WHERE v.id_venta IS NULL`.
+   - *Hallazgo:* Detección de 2 artículos del catálogo sin rotación comercial, orientando al área de Producto a revisar su estrategia de precios o visibilidad web antes de considerar su descatalogación.
+4. **Consulta 4 — Consolidado por Canal (UNION ALL):**
+   - Segmentación y unificación de ventas por canal generado dinámicamente (`Online` vs. `Presencial`) mediante `UNION ALL` y agregación con `SUM(total) AS total_canal`.
+   - *Hallazgo:* El canal `Online` concentró el 56.18% (\$3,620.00) de la facturación frente al 43.82% (\$2,824.00) de `Presencial`, marcando la necesidad de potenciar la experiencia en tienda física.
+
