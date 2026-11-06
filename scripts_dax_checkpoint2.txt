@@ -1,0 +1,85 @@
+===============================================================================
+FÓRMULAS DAX PARA CHECKPOINT 2 (COPIAR Y PEGAR EN POWER BI DESKTOP)
+Archivo: Arce_Nombre_Checkpoint2.pbix -> Arce_Daniel_Checkpoint2.pbix
+===============================================================================
+
+-------------------------------------------------------------------------------
+PASO PREVIO (OPCIONAL PERO RECOMENDADO PARA RELACIÓN Dim_Categorias -> Dim_Productos):
+En la Vista de Tabla, seleccioná Dim_Productos -> clic en "Nueva columna" y pegá:
+-------------------------------------------------------------------------------
+id_categoria = 
+SWITCH(
+    Dim_Productos[categoria],
+    "Computación", 1,
+    "Accesorios", 2,
+    "Audio", 3,
+    "Almacenamiento", 4
+)
+
+-------------------------------------------------------------------------------
+PASO 2: CREAR LA TABLA CALENDARIO (Dim_Fechas) EN UN SOLO PASO
+Andá a Inicio -> Nueva tabla y pegá todo este bloque junto (crea Dim_Fechas y sus 5 columnas):
+-------------------------------------------------------------------------------
+Dim_Fechas = 
+ADDCOLUMNS(
+    CALENDAR(
+        MIN(Fact_Ventas[fecha_venta]),
+        MAX(Fact_Ventas[fecha_venta])
+    ),
+    "Año", YEAR([Date]),
+    "Mes Número", MONTH([Date]),
+    "Mes Nombre", FORMAT([Date], "MMMM"),
+    "Trimestre", "T" & QUARTER([Date]),
+    "Semana", WEEKNUM([Date])
+)
+
+*(O si preferís crear primero la tabla y luego las 5 columnas una por una con "Nueva columna"):*
+Tabla:
+Dim_Fechas = CALENDAR(MIN(Fact_Ventas[fecha_venta]), MAX(Fact_Ventas[fecha_venta]))
+
+Columnas calculadas en Dim_Fechas:
+Año = YEAR(Dim_Fechas[Date])
+Mes Número = MONTH(Dim_Fechas[Date])
+Mes Nombre = FORMAT(Dim_Fechas[Date], "MMMM")
+Trimestre = "T" & QUARTER(Dim_Fechas[Date])
+Semana = WEEKNUM(Dim_Fechas[Date])
+
+
+-------------------------------------------------------------------------------
+PASO 4: LAS 5 MEDIDAS CORE DENTRO DE LA TABLA _Medidas
+(Clic derecho sobre _Medidas -> Nueva medida -> pegar una por una)
+-------------------------------------------------------------------------------
+
+// Medida 1 — Agregación Básica:
+Total Ventas = SUM(Fact_Ventas[total_venta])
+
+// Medida 2 — Filtrada con CALCULATE:
+Ventas Online = 
+CALCULATE(
+    [Total Ventas],
+    Fact_Ventas[canal] = "Online"
+)
+
+// Medida 3 — Inteligencia de Tiempo (Acumulado Anual YTD):
+Ventas YTD = 
+TOTALYTD(
+    [Total Ventas],
+    Dim_Fechas[Date]
+)
+
+// Medida 4 — Inteligencia de Tiempo (Mismo Período Año Anterior LY):
+Ventas LY = 
+CALCULATE(
+    [Total Ventas],
+    SAMEPERIODLASTYEAR(Dim_Fechas[Date])
+)
+
+// Medida 5 — Cálculo Optimizado con Variables (VAR) y DIVIDE:
+% Crecimiento Anual = 
+VAR VentasActual   = [Total Ventas]
+VAR VentasAnterior = [Ventas LY]
+RETURN
+    DIVIDE(
+        VentasActual - VentasAnterior,
+        VentasAnterior
+    )
