@@ -1,0 +1,152 @@
+===============================================================================
+SCRIPTS EN LENGUAJE M PARA POWER QUERY (COPIAR Y PEGAR EN EDITOR AVANZADO)
+Archivo origen: C:\Users\USUARIO\Desktop\coder\data analystics\Pipeline_ETL_Dataset.xlsx
+===============================================================================
+
+-------------------------------------------------------------------------------
+1) CONSULTA: Dim_Clientes (Resultado: 11 filas, 7 columnas)
+-------------------------------------------------------------------------------
+let
+    // 1. Conexión al archivo fuente Excel en ruta local fija para evitar rotura de vínculo
+    Origen = Excel.Workbook(File.Contents("C:\Users\USUARIO\Desktop\coder\data analystics\Pipeline_ETL_Dataset.xlsx"), null, true),
+    Navegacion_Clientes = Origen{[Item="clientes",Kind="Sheet"]}[Data],
+
+    // 2. Promoción de la primera fila como encabezados de columna en formato snake_case
+    Encabezados_Promovidos = Table.PromoteHeaders(Navegacion_Clientes, [PromoteAllScalars=true]),
+
+    // 3. Filtro de filas vacías al final de la hoja Excel (conserva los 12 registros reales)
+    Filas_Vacias_Eliminadas = Table.SelectRows(Encabezados_Promovidos, each [id_cliente] <> null),
+
+    // 4. Eliminación de duplicados por PK (id_cliente = 1 repetido en origen -> quedan 11 clientes).
+    // Es indispensable garantizar unicidad en la clave primaria de Dim_Clientes para construir
+    // una relación 1:N válida con Fact_Ventas en el modelo estrella del Módulo 8.
+    Duplicados_Eliminados_PK = Table.Distinct(Filas_Vacias_Eliminadas, {"id_cliente"}),
+
+    // 5. Imputación de email nulo (id_cliente = 9, Valentina Paz) con valor por defecto.
+    // No se elimina el registro porque el cliente posee 5 transacciones en Fact_Ventas;
+    // eliminarlo rompería la integridad referencial dejando ventas huérfanas.
+    Email_Nulo_Reemplazado = Table.ReplaceValue(Duplicados_Eliminados_PK, null, "sin_email@techstore.com", Replacer.ReplaceValue, {"email"}),
+
+    // 6. Imputación de ciudad nula (id_cliente = 11, Roberto Díaz) con "Sin dato".
+    // Permite conservar el registro maestro completo (11 clientes) y evita valores "(En blanco)"
+    // al segmentar reportes geográficos por ciudad.
+    Ciudad_Nula_Reemplazada = Table.ReplaceValue(Email_Nulo_Reemplazado, null, "Sin dato", Replacer.ReplaceValue, {"ciudad"}),
+
+    // 7. Asignación explícita de tipos de datos: entero para PK, texto para atributos y Date para fecha_registro
+    Tipos_Datos_Corregidos = Table.TransformColumnTypes(Ciudad_Nula_Reemplazada, {
+        {"id_cliente", Int64.Type},
+        {"nombre_cliente", type text},
+        {"email", type text},
+        {"ciudad", type text},
+        {"pais", type text},
+        {"segmento", type text},
+        {"fecha_registro", type date}
+    })
+in
+    Tipos_Datos_Corregidos
+
+
+-------------------------------------------------------------------------------
+2) CONSULTA: Dim_Productos (Resultado: 12 filas, 8 columnas)
+-------------------------------------------------------------------------------
+let
+    // 1. Conexión al archivo fuente Excel provisto por el curso
+    Origen = Excel.Workbook(File.Contents("C:\Users\USUARIO\Desktop\coder\data analystics\Pipeline_ETL_Dataset.xlsx"), null, true),
+    Navegacion_Productos = Origen{[Item="productos",Kind="Sheet"]}[Data],
+
+    // 2. Promoción de encabezados desde la primera fila de la hoja productos
+    Encabezados_Promovidos = Table.PromoteHeaders(Navegacion_Productos, [PromoteAllScalars=true]),
+
+    // 3. Filtro de filas vacías al final de la hoja Excel (conserva los 13 registros reales)
+    Filas_Vacias_Eliminadas = Table.SelectRows(Encabezados_Promovidos, each [id_producto] <> null),
+
+    // 4. Eliminación de duplicados únicamente por la clave primaria id_producto (id_producto = 103 repetido).
+    // Garantiza que Dim_Productos tenga cardinalidad 1 en su clave primaria antes del Merge y del modelado 1:N.
+    Duplicados_Eliminados_PK = Table.Distinct(Filas_Vacias_Eliminadas, {"id_producto"}),
+
+    // 5. Imputación del precio nulo en id_producto = 109 (SSD Externo 1TB) con 130.
+    // No se elimina el producto porque registra 5 ventas en Fact_Ventas (id_venta 1009, 1018, 1029, 1038 y 1047)
+    // donde su precio_unitario histórico es exactamente 130, preservando la integridad referencial y las 12 filas.
+    Precio_Nulo_Imputado = Table.ReplaceValue(Duplicados_Eliminados_PK, null, 130, Replacer.ReplaceValue, {"precio"}),
+
+    // 6. Imputación de categoría nula en id_producto = 111 (Laptop Gaming Pro) con "Computación".
+    // Se deduce de forma determinística a partir de su subcategoria = "Laptops" y de Dim_Categorias
+    // (donde Computación agrupa "Laptops, PCs y monitores"), evitando que el Merge hacia Fact_Ventas propague nulos.
+    Categoria_Nula_Imputada = Table.ReplaceValue(Precio_Nulo_Imputado, null, "Computación", Replacer.ReplaceValue, {"categoria"}),
+
+    // 7. Tipado estricto: enteros para ID/stock/activo, número decimal para precio/costo y texto para descriptores
+    Tipos_Datos_Corregidos = Table.TransformColumnTypes(Categoria_Nula_Imputada, {
+        {"id_producto", Int64.Type},
+        {"nombre_producto", type text},
+        {"categoria", type text},
+        {"subcategoria", type text},
+        {"precio", type number},
+        {"costo", type number},
+        {"stock", Int64.Type},
+        {"activo", Int64.Type}
+    })
+in
+    Tipos_Datos_Corregidos
+
+
+-------------------------------------------------------------------------------
+3) CONSULTA: Dim_Categorias (Resultado: 4 filas, 3 columnas)
+-------------------------------------------------------------------------------
+let
+    // 1. Conexión al archivo fuente Excel
+    Origen = Excel.Workbook(File.Contents("C:\Users\USUARIO\Desktop\coder\data analystics\Pipeline_ETL_Dataset.xlsx"), null, true),
+    Navegacion_Categorias = Origen{[Item="categorias",Kind="Sheet"]}[Data],
+
+    // 2. Promoción de encabezados de la tabla de referencia de categorías
+    Encabezados_Promovidos = Table.PromoteHeaders(Navegacion_Categorias, [PromoteAllScalars=true]),
+
+    // 3. Eliminación de filas vacías residuales del formato de la hoja Excel (quedan las 4 categorías reales)
+    Filas_Vacias_Eliminadas = Table.SelectRows(Encabezados_Promovidos, each [id_categoria] <> null),
+
+    // 4. Definición de tipos de datos: Whole Number para id_categoria y Text para nombre y descripción
+    Tipos_Datos_Corregidos = Table.TransformColumnTypes(Filas_Vacias_Eliminadas, {
+        {"id_categoria", Int64.Type},
+        {"nombre_categoria", type text},
+        {"descripcion", type text}
+    })
+in
+    Tipos_Datos_Corregidos
+
+
+-------------------------------------------------------------------------------
+4) CONSULTA: Fact_Ventas (Resultado: 50 filas, 11 columnas)
+-------------------------------------------------------------------------------
+let
+    // 1. Conexión al libro Excel y lectura de la hoja transaccional ventas
+    Origen = Excel.Workbook(File.Contents("C:\Users\USUARIO\Desktop\coder\data analystics\Pipeline_ETL_Dataset.xlsx"), null, true),
+    Navegacion_Ventas = Origen{[Item="ventas",Kind="Sheet"]}[Data],
+
+    // 2. Promoción de la primera fila como encabezados en formato snake_case
+    Encabezados_Promovidos = Table.PromoteHeaders(Navegacion_Ventas, [PromoteAllScalars=true]),
+
+    // 3. Filtro de filas vacías al final de la hoja Excel (conserva las 50 transacciones reales)
+    Filas_Vacias_Eliminadas = Table.SelectRows(Encabezados_Promovidos, each [id_venta] <> null),
+
+    // 4. Tipado de datos transaccionales: fecha_venta como Date (crítico para inteligencia de tiempo DAX
+    // y tabla calendario en M8), importes/descuentos como Decimal Number e IDs/cantidad como Whole Number
+    Tipos_Datos_Corregidos = Table.TransformColumnTypes(Filas_Vacias_Eliminadas, {
+        {"id_venta", Int64.Type},
+        {"fecha_venta", type date},
+        {"id_cliente", Int64.Type},
+        {"id_producto", Int64.Type},
+        {"cantidad", Int64.Type},
+        {"precio_unitario", type number},
+        {"descuento", type number},
+        {"total_venta", type number},
+        {"canal", type text}
+    }),
+
+    // 5. Combinación (Merge Left Outer) con Dim_Productos a través de la clave foránea id_producto
+    // para desnormalizar y enriquecer la tabla de hechos sin crear una consulta adicional
+    Merge_Dim_Productos = Table.NestedJoin(Tipos_Datos_Corregidos, {"id_producto"}, Dim_Productos, {"id_producto"}, "Dim_Productos", JoinKind.LeftOuter),
+
+    // 6. Expansión exclusiva de nombre_producto y categoria desde Dim_Productos ya limpia y sin duplicados,
+    // garantizando que no se multipliquen las 50 filas originales de Fact_Ventas
+    Columnas_Producto_Expandidas = Table.ExpandTableColumn(Merge_Dim_Productos, "Dim_Productos", {"nombre_producto", "categoria"}, {"nombre_producto", "categoria"})
+in
+    Columnas_Producto_Expandidas
